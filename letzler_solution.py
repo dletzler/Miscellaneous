@@ -4,6 +4,7 @@
 #Just 4-grams: 36.6%/72.28% [Note--made mistake: not enough spaces in the ngrams]
 #Add two rules--37.45%/74.56%
 #3-grams plus two rules--40.17%/78.42%
+#3-grams plus two rules, using separate a/an--49.23%/80.67%
 
 import json
 import itertools
@@ -72,16 +73,14 @@ for i in range(0, len(text)):
             an_current = an_total/total
             the_current = the_total/total
             #Make corrections in submission file
-            if current[-2]=="a" or current[-2]=="an":
-                if a_current + an_current >= the_current:
-                    submission[i][art_index[j]] = ["a", a_current + an_current]
-                else:
-                    submission[i][art_index[j]] = ["the", the_current]
+
+            if a_current >= the_current and a_current >= an_current:
+                submission[i][art_index[j]] = ["a", a_current]
+            elif an_current >= the_current and an_current > a_current:
+                submission[i][art_index[j]] = ["an", an_current]
             else:
-                if the_current >= a_current + an_current:
-                    submission[i][art_index[j]] = ["the", the_current]
-                else:
-                    submission[i][art_index[j]] = ["a", a_current + an_current]
+                submission[i][art_index[j]] = ["the", the_current]
+
         #Look past rarely occurring phrases
         else:
             submission[i][art_index[j]] = [current[-2], 1]
@@ -100,44 +99,44 @@ for i in range(0, len(text)):
 
     #A/an replacement
     #Locate all words/indices for indefinite articles
-    indef_index = [y for y,x in enumerate(submission[i]) if type(x)==list and (x[0] == 'a' or x[0] == "an")]
-    indef_art = [x[0] for x in submission[i] if type(x)==list and (x[0] == 'a' or x[0] == "an")]
-    noun_index = [x + 1 for x in indef_index]
-    indef_nouns = []
-    for index in noun_index:
-        indef_nouns.append(text[i][index])
-    bigram = [x + " " + y for x,y in zip(indef_art, indef_nouns)]
+    #indef_index = [y for y,x in enumerate(submission[i]) if type(x)==list and (x[0] == 'a' or x[0] == "an")]
+    #indef_art = [x[0] for x in submission[i] if type(x)==list and (x[0] == 'a' or x[0] == "an")]
+    #noun_index = [x + 1 for x in indef_index]
+    #indef_nouns = []
+    #for index in noun_index:
+    #    indef_nouns.append(text[i][index])
+    #bigram = [x + " " + y for x,y in zip(indef_art, indef_nouns)]
     #Lookup bigrams in ngram dictionary
-    for k in range(0, len(indef_nouns)):
-        current_noun = ["a " + indef_nouns[k], "an " + indef_nouns[k]]
-        try:
-            a_total = ngrams[current_noun[0]]
-        except:
-            a_total = 0
-        try:
-            an_total = ngrams[current_noun[1]]
-        except:
-            an_total = 0
+    #for k in range(0, len(indef_nouns)):
+    #    current_noun = ["a " + indef_nouns[k], "an " + indef_nouns[k]]
+    #    try:
+    #        a_total = ngrams[current_noun[0]]
+    #    except:
+    #        a_total = 0
+    #    try:
+    #        an_total = ngrams[current_noun[1]]
+    #    except:
+    #        an_total = 0
 
         #Determine relative frequenices of a/an
-        indef_total = a_total + an_total
-        if indef_total!=0:
-            a_current = a_total/indef_total
-            an_current = an_total/indef_total
+    #    indef_total = a_total + an_total
+    #    if indef_total!=0:
+    #        a_current = a_total/indef_total
+    #        an_current = an_total/indef_total
         #Rely on basic aeiou rule for rarities
-        elif indef_total==0:
-            if list(indef_nouns[k])[0] in vowels:
-                a_current = 0.01
-                an_current = 0.99
-            else:
-                a_current = 0.99
-                an_current = 0.01
+    #    elif indef_total==0:
+    #        if list(indef_nouns[k])[0] in vowels:
+    #            a_current = 0.01
+    #            an_current = 0.99
+    #        else:
+    #            a_current = 0.99
+    #            an_current = 0.01
 
         #Input corrections where necessary
-        if a_current >= an_current:
-            submission[i][indef_index[k]] = ['a', a_current * submission[i][indef_index[k]][1]]
-        else:
-            submission[i][indef_index[k]] = ['an', an_current * submission[i][indef_index[k]][1]]
+    #    if a_current >= an_current:
+    #        submission[i][indef_index[k]] = ['a', a_current * submission[i][indef_index[k]][1]]
+    #    else:
+    #        submission[i][indef_index[k]] = ['an', an_current * submission[i][indef_index[k]][1]]
 
     #Eliminate predictions where original text is already correct
     for l in range(0, len(text[i])):
