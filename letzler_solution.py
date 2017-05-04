@@ -4,12 +4,14 @@
 #Just 4-grams: 36.6%/72.28% [Note--made mistake: not enough spaces in the ngrams]
 #Add two rules--37.45%/74.56%
 #3-grams plus two rules--40.17%/78.42%
-#3-grams plus two rules, using separate a/an--49.23%/80.67%
+#3-grams plus two rules--49.23%/80.67%
+#gram-to-NN, incorporating a/an,  plus two rules--50.84%/79.27%
+
 
 import json
 import itertools
 from __future__ import division
-
+#Load relevant files
 with open("./grammarly_research_assignment/data/sentence_train.txt") as f:
     text = json.load(f)
 with open("./grammarly_research_assignment/data/corrections_train.txt") as f:
@@ -20,35 +22,40 @@ with open("./grammarly_research_assignment/data/ngrams.txt") as f:
     ngrams = json.load(f)
 with open("./grammarly_research_assignment/data/pos_tags_train.txt") as f:
     pos = json.load(f)
-
-text = [[x.lower() for x in y if x!='"'] for y in text]
-submission = [[x.lower() for x in y if x!='"'] for y in submission]
-pos = [[x for x in y if x!='"'] for y in pos]
+#Lower-case all text and set up vowel/noun lists
+text = [[x.lower() for x in y] for y in text]
+submission = [[x.lower() for x in y] for y in submission]
 vowels = ['a', 'e', 'i', 'o', 'u']
 nouns = ["NN", "NNS", "NNP", "NNPS"]
 
+#Loop over all sentences in corpus
 for i in range(0, len(text)):
+    #Locate all articles in sentence
     art_index = [y for y,x in enumerate(text[i]) if x == 'a' or x == "an" or x=="the"]
+    #Loop through each article to generate surrounding ngram, from word prior to accompanying noun
     for j in range(0, len(art_index)):
+        #Start with fresh ngram-collector
         current=[]
+        #Skip if there are no articles
         if art_index==[]:
             continue
+        #Iterate through sentence to find next noun
         it=1
         while art_index[j] + it < len(text[i]):
             if pos[i][art_index[j] + it] in nouns:
+                #If article is the first word of the sentence, start ngram with article and end with noun
                 if art_index[j]==0:
                     current = text[i][0:art_index[j] + it + 1]
+                #If article is not the first word of the sentence, start ngram with word prior to article and end with noun
                 else:
                     current = text[i][art_index[j]-1:art_index[j] + it + 1]
                 break
             it +=1
+        #In case where no noun follows the article, use article and next word as ngram
         if current==[]:
             current = text[i][art_index[j]: art_index[j]+2]
-        gram = ""
-        for word in current:
-            gram = gram + " " + word
-        gram = gram[1:]
-        #Generate at set of possible article ngrams
+
+        #Generate all three possible ngrams using three articles
         art_loc = current.index(text[i][art_index[j]])
         the_gram = " ".join(["the" if x==current[art_loc] else x for x in current])
         a_gram = " ".join(["a" if x==current[art_loc] else x for x in current])
@@ -67,14 +74,14 @@ for i in range(0, len(text)):
             the_total = ngrams[the_gram]
         except:
             the_total = 0
+
         #Determine relative frequency
         total = a_total + an_total + the_total
         if total!=0:
             a_current = a_total/total
             an_current = an_total/total
             the_current = the_total/total
-            #Make corrections in submission file
-
+            #Make base predictions in submission file based on most common ngram
             if a_current >= the_current and a_current >= an_current:
                 submission[i][art_index[j]] = ["a", a_current]
             elif an_current >= the_current and an_current > a_current:
@@ -82,12 +89,11 @@ for i in range(0, len(text)):
             else:
                 submission[i][art_index[j]] = ["the", the_current]
 
-        #Look past rarely occurring phrases
+        #Default to written version rarely occurring phrases (for symmetry only)
         else:
             submission[i][art_index[j]] = [current[art_loc], 1]
 
-
-        #RULE: Plural nouns only take "the"
+        #RULE: Plural nouns usually take "the"--this part is relatively weak, due to phrases like "a few years"
         try:
             if pos[i][art_index[j]+it] in ["NNS", "NNPS"]:
                 submission[i][art_index[j]] = ['the', 0.99]
@@ -183,58 +189,58 @@ for i in range(0, len(text)):
     #        submission[i][indef_index[k]] = ['an', an_current * submission[i][indef_index[k]][1]]
 
 #Locate all articles
-art_index = [y for y,x in enumerate(text[i]) if x == 'a' or x == "an" or x=="the"]
+#art_index = [y for y,x in enumerate(text[i]) if x == 'a' or x == "an" or x=="the"]
 
 #Part I: Generate base probabilities for each article based on 4-grams
 #Generate list of 4-grams for each article (or 2/3-grams if at start of sentence)
-for j in range(0, len(art_index)):
-    current = text[i][art_index[j]-1:art_index[j]+2]
+#for j in range(0, len(art_index)):
+#    current = text[i][art_index[j]-1:art_index[j]+2]
     #Deal with cases where there are either no articles or articles at the start of the sentence
-    if current ==[]:
-        try:
-            if text[i].index("the" or "a" or "an")==0:
-                current = text[i][0:2]
-        except:
-            pass
+#    if current ==[]:
+#        try:
+#            if text[i].index("the" or "a" or "an")==0:
+#                current = text[i][0:2]
+#        except:
+#            pass
     #Generate at set of possible article ngrams
-    if len(current)==3:
-        the_gram = current[0] + " the " + current[2]
-        a_gram = current[0] + " a " + current[2]
-        an_gram = current[0] + " an " + current[2]
-    elif len(current)==2:
-        the_gram = "the " + current[1]
-        a_gram = "a " + current[1]
-        an_gram = "an " + current[1]
-    else:
-        continue
+#    if len(current)==3:
+#        the_gram = current[0] + " the " + current[2]
+#        a_gram = current[0] + " a " + current[2]
+#        an_gram = current[0] + " an " + current[2]
+#    elif len(current)==2:
+#        the_gram = "the " + current[1]
+#        a_gram = "a " + current[1]
+#        an_gram = "an " + current[1]
+#    else:
+#        continue
     #Determine frequency of ngrams
-    try:
-        a_total = ngrams[a_gram]
-    except:
-        a_total = 0
-    try:
-        an_total = ngrams[an_gram]
-    except:
-        an_total = 0
-    try:
-        the_total = ngrams[the_gram]
-    except:
-        the_total = 0
+#    try:
+#        a_total = ngrams[a_gram]
+#    except:
+#        a_total = 0
+#    try:
+#        an_total = ngrams[an_gram]
+#    except:
+#        an_total = 0
+#    try:
+#        the_total = ngrams[the_gram]
+#    except:
+#        the_total = 0
     #Determine relative frequency
-    total = a_total + an_total + the_total
-    if total!=0:
-        a_current = a_total/total
-        an_current = an_total/total
-        the_current = the_total/total
+#    total = a_total + an_total + the_total
+#    if total!=0:
+#        a_current = a_total/total
+#        an_current = an_total/total
+#        the_current = the_total/total
         #Make corrections in submission file
 
-        if a_current >= the_current and a_current >= an_current:
-            submission[i][art_index[j]] = ["a", a_current]
-        elif an_current >= the_current and an_current > a_current:
-            submission[i][art_index[j]] = ["an", an_current]
-        else:
-            submission[i][art_index[j]] = ["the", the_current]
+#        if a_current >= the_current and a_current >= an_current:
+#            submission[i][art_index[j]] = ["a", a_current]
+#        elif an_current >= the_current and an_current > a_current:
+#            submission[i][art_index[j]] = ["an", an_current]
+#        else:
+#            submission[i][art_index[j]] = ["the", the_current]
 
     #Look past rarely occurring phrases
-    else:
-        submission[i][art_index[j]] = [current[-2], 1]
+#    else:
+#        submission[i][art_index[j]] = [current[-2], 1]
