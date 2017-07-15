@@ -83,6 +83,7 @@ clean.flight<-function(file){
   return(flight.transform)
 }
 
+#Secondary cleaning function for different date formats
 clean.flight2<-function(file){
   df<-read.csv(file, stringsAsFactors = F)[-14]
   df$FL_DATE<-as.Date(df$FL_DATE, format="%m/%d/%Y")
@@ -114,25 +115,19 @@ check.size<-function(file){
   size<-nrow(df)
   return(size)
 }
+
 setwd("~/Alternate Career/Data Science/Code Challenges/Spotify/november")
 nov.num<-sapply(dir(),check.size)
 nov.num2<-data.frame(c(2000:2016, 1987:1999), nov.num)
 names(nov.num2)[1]<-"Year"
 
-tday.total<-tday.combined %>% group_by(year(FL_DATE)) %>% summarize(Total=n())
-names(tday.total)[1]<-"Year"
-
-tday.fract<-full_join(nov.num2, tday.total, by="Year") %>% mutate(Fraction = Total/nov.num)
-
-setwd("~/Alternate Career/Data Science/Code Challenges/Spotify")
-save(tday.combined, file="tday.RData")
-write.csv(tday.combined, "thanksgiving.csv", row.names=F)
-
 #Focus solely on 2003-on
 tday.03.16<-tday.combined %>% filter(year(FL_DATE)>= 2003)
-tday.03.16<-rbind(tday.03.16, nov.16)
 
-nov.16<-clean.flight("nov_16.csv")
+setwd("~/Alternate Career/Data Science/Code Challenges/Spotify")
+save(tday.03.16, file="tday.RData")
+
+
 
 
 
