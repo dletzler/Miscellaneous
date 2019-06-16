@@ -2,6 +2,8 @@
 
 This folder is a catch-all for various projects I've worked on.  At the moment, they include--
 
+* A visualization of botnet activity.
+
 * A script to produce a concordance for the text of the novel "Gravity's Rainbow" from a text file.
 
 * A script to project elementary-age population in the United States through the year 2038. 
