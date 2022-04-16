@@ -12,6 +12,6 @@ This folder is a catch-all for various projects I've worked on.  Many of these a
 
 * An algorithm to correct errant article usage in the English language.
 
-* A project to determine Thanksgiving air travel patterns over the past 14 years vis a vis general travel patterns.
+* A project to determine Thanksgiving air travel patterns over the past 14 years, in contrast to non-holiday travel patterns.
 
    
