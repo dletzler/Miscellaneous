@@ -1,6 +1,8 @@
 # Assorted scripts
 
-This folder is a catch-all for various projects I've worked on.  At the moment, they include--
+This folder is a catch-all for various projects I've worked on.  Many of these are older projects and largely for historical record-keeping. Although I generally stand by the final results, these are not representative of my current approaches to coding.
+
+## Contents
 
 * A visualization of botnet activity.
 
